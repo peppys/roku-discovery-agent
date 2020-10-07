@@ -8,39 +8,30 @@ import (
 	"net/http"
 )
 
-type DiscoveryClient struct {
-	httpClient *http.Client
-}
-
 type Client struct {
-	Host       string
 	httpClient *http.Client
 }
 
-func NewClient(httpClient *http.Client) *DiscoveryClient {
-	return &DiscoveryClient{httpClient}
+func NewClient(httpClient *http.Client) *Client {
+	return &Client{httpClient}
 }
 
-func (c *DiscoveryClient) Discover() (*Client, error) {
+func (c *Client) Discover() (string, error) {
 	resp, err := ssdp.Search("roku:ecp")
 	if err != nil {
-		return &Client{}, fmt.Errorf("error via ssdp: %s", err)
+		return "", fmt.Errorf("error via ssdp: %s", err)
 	}
 
 	host, err := resp.Location()
 	if err != nil {
-		return &Client{}, fmt.Errorf("error parsing location: %s", err)
+		return "", fmt.Errorf("error parsing location: %s", err)
 	}
 
-	return &Client{host.String(), c.httpClient}, nil
+	return host.String(), nil
 }
 
-func (c *Client) GetHost() string {
-	return c.Host
-}
-
-func (c *Client) QueryDevice() (Device, error) {
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/device-info", c.Host))
+func (c *Client) QueryDevice(host string) (Device, error) {
+	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/device-info", host))
 	if err != nil {
 		return Device{}, fmt.Errorf("error while querying for device info: %s", err)
 	}
@@ -58,8 +49,8 @@ func (c *Client) QueryDevice() (Device, error) {
 	return device, nil
 }
 
-func (c *Client) QueryActiveApp() (ActiveApp, error) {
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/active-app", c.Host))
+func (c *Client) QueryActiveApp(host string) (ActiveApp, error) {
+	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/active-app", host))
 	if err != nil {
 		return ActiveApp{}, fmt.Errorf("error while querying for active app: %s", err)
 	}
@@ -77,8 +68,8 @@ func (c *Client) QueryActiveApp() (ActiveApp, error) {
 	return app, nil
 }
 
-func (c *Client) QueryMediaPlayer() (MediaPlayer, error) {
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/media-player", c.Host))
+func (c *Client) QueryMediaPlayer(host string) (MediaPlayer, error) {
+	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/media-player", host))
 	if err != nil {
 		return MediaPlayer{}, fmt.Errorf("error while querying for media player: %s", err)
 	}
