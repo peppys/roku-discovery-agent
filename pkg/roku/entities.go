@@ -11,7 +11,7 @@ type Device struct {
 	Uptime             int64  `xml:"uptime"`
 }
 
-type App struct {
+type ActiveApp struct {
 	Name string `xml:"app"`
 }
 

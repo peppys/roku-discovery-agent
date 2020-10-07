@@ -35,6 +35,10 @@ func (c *DiscoveryClient) Discover() (*Client, error) {
 	return &Client{host.String(), c.httpClient}, nil
 }
 
+func (c *Client) GetHost() string {
+	return c.Host
+}
+
 func (c *Client) QueryDevice() (Device, error) {
 	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/device-info", c.Host))
 	if err != nil {
@@ -54,20 +58,20 @@ func (c *Client) QueryDevice() (Device, error) {
 	return device, nil
 }
 
-func (c *Client) QueryActiveApp() (App, error) {
+func (c *Client) QueryActiveApp() (ActiveApp, error) {
 	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/active-app", c.Host))
 	if err != nil {
-		return App{}, fmt.Errorf("error while querying for active app: %s", err)
+		return ActiveApp{}, fmt.Errorf("error while querying for active app: %s", err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return App{}, fmt.Errorf("error while reading body: %v", err)
+		return ActiveApp{}, fmt.Errorf("error while reading body: %v", err)
 	}
 
-	var app App
+	var app ActiveApp
 	err = xml.Unmarshal(data, &app)
 	if err != nil {
-		return App{}, fmt.Errorf("error while unmarshalling: %v", err)
+		return ActiveApp{}, fmt.Errorf("error while unmarshalling: %v", err)
 	}
 
 	return app, nil

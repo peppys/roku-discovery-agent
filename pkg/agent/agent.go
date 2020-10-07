@@ -9,13 +9,20 @@ import (
 )
 
 type Agent struct {
-	roku        RokuClient
+	roku        RokuDiscoveryClient
 	pubSubTopic string
 	transports  []Transport
 }
 
+type RokuDiscoveryClient interface {
+	Discover() (RokuClient, error)
+}
+
 type RokuClient interface {
-	Discover() (*roku.Client, error)
+	GetHost() string
+	QueryDevice() (roku.Device, error)
+	QueryActiveApp() (roku.ActiveApp, error)
+	QueryMediaPlayer() (roku.MediaPlayer, error)
 }
 
 type Transport interface {
@@ -23,7 +30,7 @@ type Transport interface {
 	ID() string
 }
 
-func New(topic string, roku RokuClient, transports []Transport) *Agent {
+func New(topic string, roku RokuDiscoveryClient, transports []Transport) *Agent {
 	return &Agent{
 		roku,
 		topic,
@@ -42,7 +49,7 @@ func (a *Agent) Start() {
 			continue
 		}
 
-		log.Printf("Discovered roku with IP %s...\n", client.Host)
+		log.Printf("Discovered roku with IP %s...\n", client.GetHost())
 		log.Println("Collecting stats...")
 		payload, err := a.collect(client)
 		if err != nil {
@@ -58,45 +65,29 @@ func (a *Agent) Start() {
 	}
 }
 
-func (a *Agent) queryDevice(client *roku.Client, results chan QueryResult) {
-	device, err := client.QueryDevice()
+func (a *Agent) queryDeviceData(queryFunc func() (interface{}, error), label string, results chan QueryResult) {
+	data, err := queryFunc()
 	results <- QueryResult{
 		QueryResultData{
-			"device",
-			device,
+			label,
+			data,
 		},
 		err,
 	}
 }
 
-func (a *Agent) queryActiveApp(client *roku.Client, results chan QueryResult) {
-	activeApp, err := client.QueryActiveApp()
-	results <- QueryResult{
-		QueryResultData{
-			"active_app",
-			activeApp,
-		},
-		err,
-	}
-}
-
-func (a *Agent) queryMediaPlayer(client *roku.Client, results chan QueryResult) {
-	mediaPlayer, err := client.QueryMediaPlayer()
-	results <- QueryResult{
-		QueryResultData{
-			"media_player",
-			mediaPlayer,
-		},
-		err,
-	}
-}
-
-func (a *Agent) collect(client *roku.Client) (map[string]interface{}, error) {
+func (a *Agent) collect(client RokuClient) (map[string]interface{}, error) {
 	queryResultChan := make(chan QueryResult)
 
-	go a.queryDevice(client, queryResultChan)
-	go a.queryActiveApp(client, queryResultChan)
-	go a.queryMediaPlayer(client, queryResultChan)
+	go a.queryDeviceData(func() (interface{}, error) {
+		return client.QueryDevice()
+	}, "device", queryResultChan)
+	go a.queryDeviceData(func() (interface{}, error) {
+		return client.QueryMediaPlayer()
+	}, "media_player", queryResultChan)
+	go a.queryDeviceData(func() (interface{}, error) {
+		return client.QueryActiveApp()
+	}, "active_app", queryResultChan)
 
 	payload := make(map[string]interface{})
 	for i := 0; i < 3; i++ {
@@ -105,7 +96,7 @@ func (a *Agent) collect(client *roku.Client) (map[string]interface{}, error) {
 			return nil, fmt.Errorf("error while querying roku device %s", result.Error)
 		}
 
-		payload[result.Data.Type] = result.Data.Value
+		payload[result.Data.Label] = result.Data.Value
 	}
 
 	return payload, nil

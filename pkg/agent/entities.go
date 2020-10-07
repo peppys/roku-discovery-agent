@@ -7,7 +7,7 @@ type QueryDeviceResult struct {
 	Error  error
 }
 type QueryActiveAppResult struct {
-	ActiveApp roku.App
+	ActiveApp roku.ActiveApp
 	Error     error
 }
 type QueryMediaPlayerResult struct {
@@ -21,6 +21,6 @@ type QueryResult struct {
 }
 
 type QueryResultData struct {
-	Type  string
+	Label string
 	Value interface{}
 }
