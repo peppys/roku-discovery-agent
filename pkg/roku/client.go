@@ -13,7 +13,7 @@ type DiscoveryClient struct {
 }
 
 type Client struct {
-	Host string
+	Host       string
 	httpClient *http.Client
 }
 
@@ -35,59 +35,59 @@ func (c *DiscoveryClient) Discover() (*Client, error) {
 	return &Client{host.String(), c.httpClient}, nil
 }
 
-func (c *Client) QueryDevice() (*Device, error) {
+func (c *Client) QueryDevice() (Device, error) {
 	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/device-info", c.Host))
 	if err != nil {
-		return &Device{}, fmt.Errorf("error while querying for device info: %s", err)
+		return Device{}, fmt.Errorf("error while querying for device info: %s", err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return &Device{}, fmt.Errorf("error while reading body: %v", err)
+		return Device{}, fmt.Errorf("error while reading body: %v", err)
 	}
 
 	var device Device
 	err = xml.Unmarshal(data, &device)
 	if err != nil {
-		return &Device{}, fmt.Errorf("error while unmarshalling: %v", err)
+		return Device{}, fmt.Errorf("error while unmarshalling: %v", err)
 	}
 
-	return &device, nil
+	return device, nil
 }
 
-func (c *Client) QueryActiveApp() (*App, error) {
+func (c *Client) QueryActiveApp() (App, error) {
 	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/active-app", c.Host))
 	if err != nil {
-		return &App{}, fmt.Errorf("error while querying for active app: %s", err)
+		return App{}, fmt.Errorf("error while querying for active app: %s", err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return &App{}, fmt.Errorf("error while reading body: %v", err)
+		return App{}, fmt.Errorf("error while reading body: %v", err)
 	}
 
 	var app App
 	err = xml.Unmarshal(data, &app)
 	if err != nil {
-		return &App{}, fmt.Errorf("error while unmarshalling: %v", err)
+		return App{}, fmt.Errorf("error while unmarshalling: %v", err)
 	}
 
-	return &app, nil
+	return app, nil
 }
 
-func (c *Client) QueryMediaPlayer() (*MediaPlayer, error) {
+func (c *Client) QueryMediaPlayer() (MediaPlayer, error) {
 	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/media-player", c.Host))
 	if err != nil {
-		return &MediaPlayer{}, fmt.Errorf("error while querying for media player: %s", err)
+		return MediaPlayer{}, fmt.Errorf("error while querying for media player: %s", err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return &MediaPlayer{}, fmt.Errorf("error while reading body: %v", err)
+		return MediaPlayer{}, fmt.Errorf("error while reading body: %v", err)
 	}
 
 	var mediaPlayer MediaPlayer
 	err = xml.Unmarshal(data, &mediaPlayer)
 	if err != nil {
-		return &MediaPlayer{}, fmt.Errorf("error while unmarshalling: %v", err)
+		return MediaPlayer{}, fmt.Errorf("error while unmarshalling: %v", err)
 	}
 
-	return &mediaPlayer, nil
+	return mediaPlayer, nil
 }
