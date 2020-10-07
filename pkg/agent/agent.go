@@ -32,7 +32,7 @@ func New(topic string, roku RokuClient, transports []Transport) *Agent {
 }
 
 func (a *Agent) Start() {
-	log.Printf("Starting agent - publishing stats to topic %s\n", a.pubSubTopic)
+	log.Println("Starting agent")
 	for {
 		log.Println("Searching for roku...")
 		client, err := a.roku.Discover()
@@ -43,6 +43,7 @@ func (a *Agent) Start() {
 		}
 
 		log.Printf("Discovered roku with IP %s...\n", client.Host)
+		log.Println("Collecting stats...")
 		payload, err := a.collect(client)
 		if err != nil {
 			log.Printf("Error while collecting stats: %s\n", err)
@@ -93,7 +94,6 @@ func (a *Agent) queryMediaPlayer(client *roku.Client, results chan QueryResult) 
 func (a *Agent) collect(client *roku.Client) (map[string]interface{}, error) {
 	queryResultChan := make(chan QueryResult)
 
-	log.Println("Collecting stats...")
 	go a.queryDevice(client, queryResultChan)
 	go a.queryActiveApp(client, queryResultChan)
 	go a.queryMediaPlayer(client, queryResultChan)
