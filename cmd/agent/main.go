@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/peppys/roku-discovery-agent/pkg/agent"
+	"github.com/peppys/roku-discovery-agent/pkg/agent/transports"
 	"github.com/peppys/roku-discovery-agent/pkg/roku"
 	"net/http"
 	"os"
@@ -18,6 +19,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	a := agent.New(topic, roku.NewClient(http.DefaultClient))
+	a := agent.New(topic, roku.NewClient(http.DefaultClient), []agent.Transport{transports.NewStandardOutput()})
 	a.Start()
 }
