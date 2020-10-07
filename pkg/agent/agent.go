@@ -3,6 +3,7 @@ package agent
 import (
 	"fmt"
 	"github.com/peppys/roku-discovery-agent/pkg/roku"
+	"log"
 	"sync"
 	"time"
 )
@@ -31,27 +32,27 @@ func New(topic string, roku RokuClient, transports []Transport) *Agent {
 }
 
 func (a *Agent) Start() {
-	fmt.Printf("Starting agent - publishing stats to topic %s\n", a.pubSubTopic)
+	log.Printf("Starting agent - publishing stats to topic %s\n", a.pubSubTopic)
 	for {
-		fmt.Println("Searching for roku...")
+		log.Println("Searching for roku...")
 		client, err := a.roku.Discover()
 		if err != nil {
-			fmt.Printf("Roku not found: %s", err)
+			log.Printf("Roku not found: %s\n", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
-		fmt.Printf("Discovered roku with IP %s...\n", client.Host)
+		log.Printf("Discovered roku with IP %s...\n", client.Host)
 		payload, err := a.collect(client)
 		if err != nil {
-			fmt.Printf("Error while collecting stats: %s", err)
+			log.Printf("Error while collecting stats: %s\n", err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		a.transport(payload)
 
-		fmt.Println("Finished collecting stats")
+		log.Println("Finished collecting stats")
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -92,7 +93,7 @@ func (a *Agent) queryMediaPlayer(client *roku.Client, results chan QueryResult) 
 func (a *Agent) collect(client *roku.Client) (map[string]interface{}, error) {
 	queryResultChan := make(chan QueryResult)
 
-	fmt.Println("Collecting stats...")
+	log.Println("Collecting stats...")
 	go a.queryDevice(client, queryResultChan)
 	go a.queryActiveApp(client, queryResultChan)
 	go a.queryMediaPlayer(client, queryResultChan)
@@ -119,7 +120,7 @@ func (a *Agent) transport(payload map[string]interface{}) {
 			defer wg.Done()
 			err := transport.Send(payload)
 			if err != nil {
-				fmt.Printf("Error while sending transport %s", err)
+				log.Printf("Error while sending transport %s\n", err)
 			}
 		}(transport)
 	}
