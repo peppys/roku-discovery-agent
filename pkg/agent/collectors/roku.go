@@ -8,7 +8,7 @@ import (
 type RokuClient interface {
 	Discover() (string, error)
 	QueryDevice(host string) (roku.Device, error)
-	QueryActiveApp(host string) (roku.ActiveApp, error)
+	QueryActiveApp(host string) (roku.App, error)
 	QueryMediaPlayer(host string) (roku.MediaPlayer, error)
 }
 

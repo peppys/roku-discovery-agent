@@ -29,7 +29,9 @@ func main() {
 
 	a := agent.New(collectors.RokuCollector(roku.NewClient(http.DefaultClient)),
 		agent.WithInterval(5*time.Second),
-		agent.WithTransport(transports.NewStandardOutput()),
+		agent.WithTransports([]agent.Transport{
+			transports.NewStandardOutput(),
+		}),
 	)
 
 	go func() {

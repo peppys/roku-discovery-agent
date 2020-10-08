@@ -16,11 +16,7 @@ type Agent struct {
 type Option func(agent *Agent)
 
 type Collector func() (map[string]interface{}, error)
-
-type Transport interface {
-	Send(data interface{}) error
-	ID() string
-}
+type Transport func(interface{}) error
 
 func New(c Collector, opts ...Option) *Agent {
 	a := &Agent{
@@ -36,9 +32,9 @@ func New(c Collector, opts ...Option) *Agent {
 	return a
 }
 
-func WithTransport(t Transport) Option {
+func WithTransports(transports []Transport) Option {
 	return func(agent *Agent) {
-		agent.transports = append(agent.transports, t)
+		agent.transports = transports
 	}
 }
 
@@ -67,7 +63,6 @@ func (a *Agent) Start() {
 		}
 
 		a.transport(payload)
-		log.Println("Finished collecting stats")
 	}
 }
 
@@ -84,7 +79,7 @@ func (a *Agent) transport(payload map[string]interface{}) {
 
 		go func(transport Transport) {
 			defer wg.Done()
-			err := transport.Send(payload)
+			err := transport(payload)
 			if err != nil {
 				log.Printf("Error while sending transport %s\n", err)
 			}

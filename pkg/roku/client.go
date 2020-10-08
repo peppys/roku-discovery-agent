@@ -49,20 +49,20 @@ func (c *Client) QueryDevice(host string) (Device, error) {
 	return device, nil
 }
 
-func (c *Client) QueryActiveApp(host string) (ActiveApp, error) {
+func (c *Client) QueryActiveApp(host string) (App, error) {
 	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/active-app", host))
 	if err != nil {
-		return ActiveApp{}, fmt.Errorf("error while querying for active app: %s", err)
+		return App{}, fmt.Errorf("error while querying for active app: %s", err)
 	}
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return ActiveApp{}, fmt.Errorf("error while reading body: %v", err)
+		return App{}, fmt.Errorf("error while reading body: %v", err)
 	}
 
-	var app ActiveApp
+	var app App
 	err = xml.Unmarshal(data, &app)
 	if err != nil {
-		return ActiveApp{}, fmt.Errorf("error while unmarshalling: %v", err)
+		return App{}, fmt.Errorf("error while unmarshalling: %v", err)
 	}
 
 	return app, nil
