@@ -1,6 +1,8 @@
 package main
 
 import (
+	"cloud.google.com/go/pubsub"
+	"context"
 	"flag"
 	"github.com/peppys/roku-discovery-agent/pkg/agent"
 	"github.com/peppys/roku-discovery-agent/pkg/agent/collectors"
@@ -15,13 +17,28 @@ import (
 )
 
 func main() {
+	var project string
 	var topic string
+	flag.StringVar(&project, "p", "", "google pubsub project destination to publish roku stats")
 	flag.StringVar(&topic, "t", "", "google pubsub topic destination to publish roku stats")
 	flag.Parse()
 
-	if topic == "" {
-		flag.Usage()
-		os.Exit(1)
+	t := []agent.Transport{
+		transports.NewStandardOutput(),
+	}
+
+	if (project != "") != (topic != "") {
+		log.Fatalf("both project and topic must be provided to publish data to pubsub")
+	}
+
+	if project != "" && topic != "" {
+		client, err := pubsub.NewClient(context.Background(), project)
+		if err != nil {
+			log.Fatalf("failed to instantiate pubsub service: %s", err)
+		}
+
+		topic := client.Topic(topic)
+		t = append(t, transports.NewPubsub(context.Background(), topic))
 	}
 
 	sigs := make(chan os.Signal, 1)
@@ -29,9 +46,7 @@ func main() {
 
 	a := agent.New(collectors.RokuCollector(roku.NewClient(http.DefaultClient)),
 		agent.WithInterval(5*time.Second),
-		agent.WithTransports([]agent.Transport{
-			transports.NewStandardOutput(),
-		}),
+		agent.WithTransports(t),
 	)
 
 	go func() {

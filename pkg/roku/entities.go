@@ -17,5 +17,5 @@ type App struct {
 
 type MediaPlayer struct {
 	State    string `xml:"state,attr" json:"state"`
-	Position string `xml:"position" json:"position"`
+	Position string `xml:"position" json:"position,omitempty"`
 }
