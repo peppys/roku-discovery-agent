@@ -1,114 +1,73 @@
 package agent
 
 import (
-	"fmt"
-	"github.com/peppys/roku-discovery-agent/pkg/roku"
 	"log"
 	"sync"
 	"time"
 )
 
 type Agent struct {
-	roku        RokuClient
-	pubSubTopic string
-	transports  []Transport
+	collect    Collector
+	transports []Transport
+	interval   time.Duration
+	stop       chan string
 }
 
-type RokuClient interface {
-	Discover() (*roku.Client, error)
+type Option func(agent *Agent)
+
+type Collector func() (map[string]interface{}, error)
+type Transport func(interface{}) error
+
+func New(c Collector, opts ...Option) *Agent {
+	a := &Agent{
+		collect:  c,
+		interval: time.Second * 5,
+		stop:     make(chan string),
+	}
+
+	for _, opt := range opts {
+		opt(a)
+	}
+
+	return a
 }
 
-type Transport interface {
-	Send(data interface{}) error
-	ID() string
+func WithTransports(transports []Transport) Option {
+	return func(agent *Agent) {
+		agent.transports = transports
+	}
 }
 
-func New(topic string, roku RokuClient, transports []Transport) *Agent {
-	return &Agent{
-		roku,
-		topic,
-		transports,
+func WithInterval(i time.Duration) Option {
+	return func(agent *Agent) {
+		agent.interval = i
 	}
 }
 
 func (a *Agent) Start() {
-	log.Println("Starting agent")
 	for {
-		log.Println("Searching for roku...")
-		client, err := a.roku.Discover()
-		if err != nil {
-			log.Printf("Roku not found: %s\n", err)
-			time.Sleep(5 * time.Second)
-			continue
+		select {
+		case <-a.stop:
+			a.stop <- "stopped"
+			return
+		case <-time.After(a.interval):
+			break
 		}
 
-		log.Printf("Discovered roku with IP %s...\n", client.Host)
-		log.Println("Collecting stats...")
-		payload, err := a.collect(client)
+		payload, err := a.collect()
 		if err != nil {
 			log.Printf("Error while collecting stats: %s\n", err)
-			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		a.transport(payload)
-
-		log.Println("Finished collecting stats")
-		time.Sleep(5 * time.Second)
 	}
 }
 
-func (a *Agent) queryDevice(client *roku.Client, results chan QueryResult) {
-	device, err := client.QueryDevice()
-	results <- QueryResult{
-		QueryResultData{
-			"device",
-			device,
-		},
-		err,
-	}
-}
-
-func (a *Agent) queryActiveApp(client *roku.Client, results chan QueryResult) {
-	activeApp, err := client.QueryActiveApp()
-	results <- QueryResult{
-		QueryResultData{
-			"active_app",
-			activeApp,
-		},
-		err,
-	}
-}
-
-func (a *Agent) queryMediaPlayer(client *roku.Client, results chan QueryResult) {
-	mediaPlayer, err := client.QueryMediaPlayer()
-	results <- QueryResult{
-		QueryResultData{
-			"media_player",
-			mediaPlayer,
-		},
-		err,
-	}
-}
-
-func (a *Agent) collect(client *roku.Client) (map[string]interface{}, error) {
-	queryResultChan := make(chan QueryResult)
-
-	go a.queryDevice(client, queryResultChan)
-	go a.queryActiveApp(client, queryResultChan)
-	go a.queryMediaPlayer(client, queryResultChan)
-
-	payload := make(map[string]interface{})
-	for i := 0; i < 3; i++ {
-		result := <-queryResultChan
-		if result.Error != nil {
-			return nil, fmt.Errorf("error while querying roku device %s", result.Error)
-		}
-
-		payload[result.Data.Type] = result.Data.Value
-	}
-
-	return payload, nil
+func (a *Agent) Stop() {
+	a.stop <- "stop"
+	<-a.stop
+	close(a.stop)
 }
 
 func (a *Agent) transport(payload map[string]interface{}) {
@@ -118,7 +77,7 @@ func (a *Agent) transport(payload map[string]interface{}) {
 
 		go func(transport Transport) {
 			defer wg.Done()
-			err := transport.Send(payload)
+			err := transport(payload)
 			if err != nil {
 				log.Printf("Error while sending transport %s\n", err)
 			}
