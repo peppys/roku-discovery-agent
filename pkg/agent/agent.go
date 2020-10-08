@@ -50,9 +50,7 @@ func (a *Agent) Start() {
 		case <-a.stop:
 			a.stop <- "stopped"
 			return
-		default:
-			// TODO - check against time instead of pausing goroutine
-			time.Sleep(a.interval)
+		case <-time.After(a.interval):
 			break
 		}
 

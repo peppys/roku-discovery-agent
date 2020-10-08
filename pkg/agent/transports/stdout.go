@@ -6,9 +6,7 @@ import (
 )
 
 func NewStandardOutput() func(data interface{}) error {
-	return func(data interface{}) error {
-		return transport(data)
-	}
+	return transport
 }
 
 func transport(data interface{}) error {
