@@ -3,6 +3,7 @@ package transports
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 )
 
 func NewStandardOutputPrinter() func(interface{}) error {
@@ -12,7 +13,7 @@ func NewStandardOutputPrinter() func(interface{}) error {
 			return fmt.Errorf("error while json marshalling data %s", err)
 		}
 
-		fmt.Println(string(jsonBytes))
+		log.Println(string(jsonBytes))
 		return nil
 	}
 }

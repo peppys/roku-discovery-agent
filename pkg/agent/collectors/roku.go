@@ -3,6 +3,7 @@ package collectors
 import (
 	"fmt"
 	"github.com/peppys/roku-discovery-agent/pkg/roku"
+	"log"
 )
 
 type RokuClient interface {
@@ -33,6 +34,8 @@ func collect(roku RokuClient) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, fmt.Errorf("roku not found: %s", err)
 	}
+
+	log.Printf("Discovered a Roku with IP %s on network!", host)
 
 	queryResultChan := make(chan QueryResult)
 
