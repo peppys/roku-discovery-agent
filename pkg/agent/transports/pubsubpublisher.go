@@ -11,7 +11,7 @@ type Topic interface {
 	Publish(ctx context.Context, message *pubsub.Message) *pubsub.PublishResult
 }
 
-func NewPubsub(ctx context.Context, t Topic) func(data interface{}) error {
+func NewPubsubPublisher(ctx context.Context, t Topic) func(interface{}) error {
 	return func(data interface{}) error {
 		jsonBytes, err := json.Marshal(data)
 		if err != nil {

@@ -11,7 +11,12 @@ import (
 
 const multicastAddress = "239.255.255.250:1900"
 
-func Search(searchType string) (*http.Response, error) {
+type Client struct {
+}
+
+var DefaultClient = &Client{}
+
+func (c *Client) Search(searchType string) (*http.Response, error) {
 	pc, err := net.ListenPacket("udp4", "")
 	if err != nil {
 		return &http.Response{}, fmt.Errorf("unable to listen to packets: %s", err)

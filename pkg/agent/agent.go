@@ -2,15 +2,14 @@ package agent
 
 import (
 	"log"
-	"sync"
 	"time"
 )
 
 type Agent struct {
-	collect    Collector
-	transports []Transport
-	interval   time.Duration
-	stop       chan string
+	collect   Collector
+	transport Transport
+	interval  time.Duration
+	stop      chan string
 }
 
 type Option func(agent *Agent)
@@ -32,9 +31,9 @@ func New(c Collector, opts ...Option) *Agent {
 	return a
 }
 
-func WithTransports(transports []Transport) Option {
+func WithTransport(t Transport) Option {
 	return func(agent *Agent) {
-		agent.transports = transports
+		agent.transport = t
 	}
 }
 
@@ -60,7 +59,11 @@ func (a *Agent) Start() {
 			continue
 		}
 
-		a.transport(payload)
+		err = a.transport(payload)
+		if err != nil {
+			log.Printf("Error while collecting transporting metrics: %s\n", err)
+			continue
+		}
 	}
 }
 
@@ -68,20 +71,4 @@ func (a *Agent) Stop() {
 	a.stop <- "stop"
 	<-a.stop
 	close(a.stop)
-}
-
-func (a *Agent) transport(payload map[string]interface{}) {
-	var wg sync.WaitGroup
-	for _, transport := range a.transports {
-		wg.Add(1)
-
-		go func(transport Transport) {
-			defer wg.Done()
-			err := transport(payload)
-			if err != nil {
-				log.Printf("Error while sending transport %s\n", err)
-			}
-		}(transport)
-	}
-	wg.Wait()
 }

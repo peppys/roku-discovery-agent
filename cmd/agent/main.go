@@ -8,6 +8,7 @@ import (
 	"github.com/peppys/roku-discovery-agent/pkg/agent/collectors"
 	"github.com/peppys/roku-discovery-agent/pkg/agent/transports"
 	"github.com/peppys/roku-discovery-agent/pkg/roku"
+	"github.com/peppys/roku-discovery-agent/pkg/ssdp"
 	"log"
 	"net/http"
 	"os"
@@ -17,36 +18,30 @@ import (
 )
 
 func main() {
-	var project string
-	var topic string
-	flag.StringVar(&project, "p", "", "google pubsub project destination to publish roku stats")
-	flag.StringVar(&topic, "t", "", "google pubsub topic destination to publish roku stats")
+	var projectId string
+	var topicId string
+	flag.StringVar(&projectId, "p", "", "google pubsub project destination to publish roku stats")
+	flag.StringVar(&topicId, "t", "", "google pubsub topic destination to publish roku stats")
 	flag.Parse()
 
 	t := []agent.Transport{
-		transports.NewStandardOutput(),
+		transports.NewStandardOutputPrinter(),
 	}
 
-	if (project != "") != (topic != "") {
+	if (projectId != "") != (topicId != "") {
 		log.Fatalf("both project and topic must be provided to publish data to pubsub")
 	}
 
-	if project != "" && topic != "" {
-		client, err := pubsub.NewClient(context.Background(), project)
-		if err != nil {
-			log.Fatalf("failed to instantiate pubsub service: %s", err)
-		}
-
-		topic := client.Topic(topic)
-		t = append(t, transports.NewPubsub(context.Background(), topic))
+	if projectId != "" && topicId != "" {
+		t = append(t, buildPubsubPublisher(projectId, topicId))
 	}
 
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	a := agent.New(collectors.RokuCollector(roku.NewClient(http.DefaultClient)),
+	a := agent.New(collectors.RokuCollector(roku.NewClient(http.DefaultClient, ssdp.DefaultClient)),
 		agent.WithInterval(5*time.Second),
-		agent.WithTransports(t),
+		agent.WithTransport(transports.NewBulkTransporter(t)),
 	)
 
 	go func() {
@@ -58,4 +53,14 @@ func main() {
 
 	log.Println("Starting agent...")
 	a.Start()
+}
+
+func buildPubsubPublisher(projectId string, topicId string) agent.Transport {
+	client, err := pubsub.NewClient(context.Background(), projectId)
+	if err != nil {
+		log.Fatalf("failed to instantiate pubsub service: %s", err)
+	}
+
+	topic := client.Topic(topicId)
+	return transports.NewPubsubPublisher(context.Background(), topic)
 }
