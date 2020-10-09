@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 )
 
 type Topic interface {
 	Publish(ctx context.Context, message *pubsub.Message) *pubsub.PublishResult
+	String() string
 }
 
 func NewPubsubPublisher(ctx context.Context, t Topic) func(interface{}) error {
@@ -23,6 +25,7 @@ func NewPubsubPublisher(ctx context.Context, t Topic) func(interface{}) error {
 			return fmt.Errorf("failed publishing %s to topic %s: %s", data, t, err)
 		}
 
+		log.Printf("Successfully published data to topic %s\n", t.String())
 		return nil
 	}
 }

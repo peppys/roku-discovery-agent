@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-func NewBulkTransporter(transports []agent.Transport) func(interface{}) error {
+func NewBulkTransport(transports []agent.Transport) func(interface{}) error {
 	return func(payload interface{}) error {
 		var wg sync.WaitGroup
 		var errors []string

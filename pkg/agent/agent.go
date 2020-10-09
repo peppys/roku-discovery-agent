@@ -44,6 +44,8 @@ func WithInterval(i time.Duration) Option {
 }
 
 func (a *Agent) Start() {
+	log.Printf("Starting agent with interval %s...\n", a.interval)
+
 	for {
 		select {
 		case <-a.stop:
@@ -52,6 +54,7 @@ func (a *Agent) Start() {
 		case <-time.After(a.interval):
 			break
 		}
+		log.Printf("\n\nCollecting metrics...\n\n")
 
 		payload, err := a.collect()
 		if err != nil {
@@ -68,6 +71,7 @@ func (a *Agent) Start() {
 }
 
 func (a *Agent) Stop() {
+	log.Println("Stopping agent...")
 	a.stop <- "stop"
 	<-a.stop
 	close(a.stop)
