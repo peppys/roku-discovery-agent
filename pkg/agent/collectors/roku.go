@@ -31,7 +31,7 @@ func RokuCollector(roku RokuClient) func() (map[string]interface{}, error) {
 func collect(roku RokuClient) (map[string]interface{}, error) {
 	host, err := roku.Discover()
 	if err != nil {
-		return nil, fmt.Errorf("Roku not found: %s\n", err)
+		return nil, fmt.Errorf("roku not found: %s", err)
 	}
 
 	queryResultChan := make(chan QueryResult)

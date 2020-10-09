@@ -3,21 +3,25 @@ package roku
 import (
 	"encoding/xml"
 	"fmt"
-	"github.com/peppys/roku-discovery-agent/pkg/ssdp"
 	"io/ioutil"
 	"net/http"
 )
 
 type Client struct {
-	httpClient *http.Client
+	http *http.Client
+	ssdp SSDPClient
 }
 
-func NewClient(httpClient *http.Client) *Client {
-	return &Client{httpClient}
+type SSDPClient interface {
+	Search(searchType string) (*http.Response, error)
+}
+
+func NewClient(httpClient *http.Client, ssdpClient SSDPClient) *Client {
+	return &Client{httpClient, ssdpClient}
 }
 
 func (c *Client) Discover() (string, error) {
-	resp, err := ssdp.Search("roku:ecp")
+	resp, err := c.ssdp.Search("roku:ecp")
 	if err != nil {
 		return "", fmt.Errorf("error via ssdp: %s", err)
 	}
@@ -31,7 +35,7 @@ func (c *Client) Discover() (string, error) {
 }
 
 func (c *Client) QueryDevice(host string) (Device, error) {
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/device-info", host))
+	resp, err := c.http.Get(fmt.Sprintf("%s/query/device-info", host))
 	if err != nil {
 		return Device{}, fmt.Errorf("error while querying for device info: %s", err)
 	}
@@ -50,7 +54,7 @@ func (c *Client) QueryDevice(host string) (Device, error) {
 }
 
 func (c *Client) QueryActiveApp(host string) (App, error) {
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/active-app", host))
+	resp, err := c.http.Get(fmt.Sprintf("%s/query/active-app", host))
 	if err != nil {
 		return App{}, fmt.Errorf("error while querying for active app: %s", err)
 	}
@@ -69,7 +73,7 @@ func (c *Client) QueryActiveApp(host string) (App, error) {
 }
 
 func (c *Client) QueryMediaPlayer(host string) (MediaPlayer, error) {
-	resp, err := c.httpClient.Get(fmt.Sprintf("%s/query/media-player", host))
+	resp, err := c.http.Get(fmt.Sprintf("%s/query/media-player", host))
 	if err != nil {
 		return MediaPlayer{}, fmt.Errorf("error while querying for media player: %s", err)
 	}
