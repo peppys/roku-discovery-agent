@@ -17,5 +17,28 @@ To publish metrics to a Google Cloud Pub/Sub Topic:
 ./agent -p your-project-id -t your-topic-id
 ```
 
+## Data Collected
+```json
+{
+  "active_app": {
+    "name": string
+  },
+  "device": {
+    "udn": string,
+    "serial_number": string,
+    "device_id": string,
+    "vendor_name": string,
+    "model_name": string,
+    "model_number": string,
+    "friendly_device_name": string,
+    "uptime": int
+  },
+  "media_player": {
+    "state": string,
+    "position": string
+  }
+}
+```
+
 ### Demo
 ![](./demo.gif)

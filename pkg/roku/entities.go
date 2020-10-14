@@ -12,7 +12,7 @@ type Device struct {
 }
 
 type App struct {
-	Name string `xml:"app" json:"app"`
+	Name string `xml:"app" json:"name"`
 }
 
 type MediaPlayer struct {
