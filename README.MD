@@ -18,7 +18,7 @@ To publish metrics to a Google Cloud Pub/Sub Topic:
 ```
 
 ## Data Collected
-```json
+```
 {
   "active_app": {
     "name": string
